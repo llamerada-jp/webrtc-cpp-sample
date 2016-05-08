@@ -18,10 +18,10 @@ $ rm *test*
 $ find *.a -exec ar x {} \;
 $ ar q libwebrtc_all.a *.o
 $ cd <path to work>
-$ git checkout --depth 1 https://github.com/llamerada-jp/webrtc-cpp-sample.git
+$ git clone --depth 1 https://github.com/llamerada-jp/webrtc-cpp-sample.git
 $ cd webrtc-cpp-sample
 $ git submodule init
-$ git submodule update --depth 1
+$ git submodule update
 $ cd <path to work>
 $ clang++ -std=c++11 -I <path to webrtc>/src/ -L <path to work>/libs -L <path to webrtc>/src/out/Debug/ -lwebrtc_all -lwebrtc -framework CoreFoundation -framework Foundation -framework CoreAudio -framework AudioToolbox -framework CoreGraphics -o sample <path to work>/webrtc-cpp-sample/main.cpp
 ```
