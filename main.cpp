@@ -16,7 +16,6 @@
 
 // WebRTC関連のヘッダ
 #include <webrtc/api/peerconnectioninterface.h>
-#include <webrtc/api/test/fakeconstraints.h>
 #include <webrtc/base/flags.h>
 #include <webrtc/base/physicalsocketserver.h>
 #include <webrtc/base/ssladapter.h>
@@ -44,11 +43,11 @@ class Connection {
   // ICEを取得したら、表示用JSON配列の末尾に追加
   void onIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     picojson::object ice;
-    std::string sdp;
-    candidate->ToString(&sdp);
-    ice.insert(std::make_pair("sdp", picojson::value(sdp)));
-    ice.insert(std::make_pair("sdp_mid", picojson::value(candidate->sdp_mid())));
-    ice.insert(std::make_pair("sdp_mline_index", picojson::value(std::to_string(candidate->sdp_mline_index()))));
+    std::string candidate_str;
+    candidate->ToString(&candidate_str);
+    ice.insert(std::make_pair("candidate", picojson::value(candidate_str)));
+    ice.insert(std::make_pair("sdpMid", picojson::value(candidate->sdp_mid())));
+    ice.insert(std::make_pair("sdpMLineIndex", picojson::value(static_cast<double>(candidate->sdp_mline_index()))));
     ice_array.push_back(picojson::value(ice));
   }
 
@@ -65,22 +64,23 @@ class Connection {
                 << "PeerConnectionObserver::SignalingChange(" << new_state << ")" << std::endl;
     };
 
-    void OnAddStream(webrtc::MediaStreamInterface* stream) override {
+    void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {
       std::cout << std::this_thread::get_id() << ":"
                 << "PeerConnectionObserver::AddStream" << std::endl;
     };
 
-    void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {
+    void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {
       std::cout << std::this_thread::get_id() << ":"
                 << "PeerConnectionObserver::RemoveStream" << std::endl;
     };
 
-    void OnDataChannel(webrtc::DataChannelInterface* data_channel) override {
+    void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override {
       std::cout << std::this_thread::get_id() << ":"
                 << "PeerConnectionObserver::DataChannel(" << data_channel
                 << ", " << parent.data_channel.get() << ")" << std::endl;
-      // 接続時に作ったDataChannelと異なるインスタンスが割り当てられる。
+      // Answer送信側は、onDataChannelでDataChannelの接続を受け付ける
       parent.data_channel = data_channel;
+      parent.data_channel->RegisterObserver(&parent.dco);
     };
 
     void OnRenegotiationNeeded() override {
@@ -200,31 +200,24 @@ class Connection {
   }
 };
 
-rtc::Thread* thread;
+std::unique_ptr<rtc::Thread> thread;
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory;
 webrtc::PeerConnectionInterface::RTCConfiguration configuration;
 Connection connection;
 rtc::PhysicalSocketServer socket_server;
 
-void thread_entry() {
-  std::cout << std::this_thread::get_id() << ":"
-            << "RTC thread" << std::endl;
-  peer_connection_factory = webrtc::CreatePeerConnectionFactory();
-  if (peer_connection_factory.get() == nullptr) {
-    std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
-    return;
-  }
+class CustomRunnable : public rtc::Runnable {
+ public:
+  void Run(rtc::Thread* subthread) override {
+    peer_connection_factory = webrtc::CreatePeerConnectionFactory();
+    if (peer_connection_factory.get() == nullptr) {
+      std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
+      return;
+    }
 
-  // GoogleのSTUNサーバを利用
-  webrtc::PeerConnectionInterface::IceServer ice_server;
-  ice_server.uri = "stun:stun.l.google.com:19302";
-  configuration.servers.push_back(ice_server);
-  
-  thread = rtc::Thread::Current();
-  thread->set_socketserver(&socket_server);
-  thread->Run();
-  thread->set_socketserver(nullptr);
-}
+    subthread->Run();
+  }
+};
 
 void cmd_sdp1() {
   connection.peer_connection = peer_connection_factory->CreatePeerConnection(configuration, nullptr, nullptr, &connection.pco);
@@ -234,7 +227,7 @@ void cmd_sdp1() {
 
   connection.data_channel = connection.peer_connection->CreateDataChannel("data_channel", &config);
   connection.data_channel->RegisterObserver(&connection.dco);
-    
+
   if (connection.peer_connection.get() == nullptr) {
     peer_connection_factory = nullptr;
     std::cout << "Error on CreatePeerConnection." << std::endl;
@@ -246,12 +239,6 @@ void cmd_sdp1() {
 
 void cmd_sdp2(const std::string& parameter) {
   connection.peer_connection = peer_connection_factory->CreatePeerConnection(configuration, nullptr, nullptr, &connection.pco);
-
-  webrtc::DataChannelInit config;
-  // DataChannelの設定
-
-  connection.data_channel = connection.peer_connection->CreateDataChannel("data_channel", &config);
-  connection.data_channel->RegisterObserver(&connection.dco);
 
   if (connection.peer_connection.get() == nullptr) {
     peer_connection_factory = nullptr;
@@ -303,9 +290,9 @@ void cmd_ice2(const std::string& parameter) {
   for (auto& ice_it : v.get<picojson::array>()) {
     picojson::object& ice_json = ice_it.get<picojson::object>();
     webrtc::IceCandidateInterface* ice =
-      CreateIceCandidate(ice_json.at("sdp_mid").get<std::string>(),
-                         std::stoi(ice_json.at("sdp_mline_index").get<std::string>()),
-                         ice_json.at("sdp").get<std::string>(),
+      CreateIceCandidate(ice_json.at("sdpMid").get<std::string>(),
+                         static_cast<int>(ice_json.at("sdpMLineIndex").get<double>()),
+                         ice_json.at("candidate").get<std::string>(),
                          &err_sdp);
     if (!err_sdp.line.empty() && !err_sdp.description.empty()) {
       std::cout << "Error on CreateIceCandidate" << std::endl
@@ -341,8 +328,17 @@ int main(int argc, char* argv[]) {
   std::cout << std::this_thread::get_id() << ":"
             << "Main thread" << std::endl;
 
+  // GoogleのSTUNサーバを利用
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.uri = "stun:stun.l.google.com:19302";
+  configuration.servers.push_back(ice_server);
+
+  thread.reset(new rtc::Thread(&socket_server));
+  
   rtc::InitializeSSL();
-  std::thread th(thread_entry);
+
+  CustomRunnable runnable;
+  thread->Start(&runnable);
 
   std::string line;
   std::string command;
@@ -408,7 +404,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  th.join();
+  thread.reset();
   rtc::CleanupSSL();
 
   return 0;

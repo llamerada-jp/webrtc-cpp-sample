@@ -4,24 +4,18 @@ Sample program for using WebRTC(DataChannel) on C++.
 # Requirement
 
 * Mac OSX
-* WebRTC(require Debug build before compile this project)(https://webrtc.org/native-code/development/).
+* Please download libwebrtc(It is precompiled chrome's WebRTC) and unarchive it.(https://github.com/llamerada-jp/libwebrtc)
 
 # Compile
 
 ```sh
-$ mkdir -p <path to work>/libs
-$ cp <path to webrtc>/src/out/Release/lib* <path to work>/libs
-$ cd <path to work>/libs
-$ rm *test*
-$ find *.a -exec ar x {} \;
-$ ar q libwebrtc_all.a *.o
 $ cd <path to work>
 $ git clone --depth 1 https://github.com/llamerada-jp/webrtc-cpp-sample.git
 $ cd webrtc-cpp-sample
 $ git submodule init
 $ git submodule update
-$ cd <path to work>
-$ clang++ -std=c++11 -I <path to webrtc>/src/ -L <path to work>/libs -L <path to webrtc>/src/out/Debug/ -lwebrtc_all -lwebrtc -framework CoreFoundation -framework Foundation -framework CoreAudio -framework AudioToolbox -framework CoreGraphics -o sample <path to work>/webrtc-cpp-sample/main.cpp
+$ cmake -DLIBWEBRTC_PATH=<path to unarchived webrtc> .
+$ make
 ```
 
 # Run
