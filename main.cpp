@@ -123,7 +123,7 @@ class Connection {
     void OnMessage(const webrtc::DataBuffer& buffer) override {
       std::cout << std::this_thread::get_id() << ":"
                 << "DataChannelObserver::Message" << std::endl;
-      std::cout << buffer.data.data<char>() << std::endl;
+      std::cout << std::string(buffer.data.data<char>(), buffer.data.size()) << std::endl;
     };
 
     void OnBufferedAmountChange(uint64_t previous_amount) override {
