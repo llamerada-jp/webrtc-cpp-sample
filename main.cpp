@@ -15,11 +15,13 @@
 //#define WEBRTC_WIN 1
 
 // WebRTC関連のヘッダ
+#include <webrtc/api/audio_codecs/builtin_audio_decoder_factory.h>
+#include <webrtc/api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <webrtc/api/peerconnectioninterface.h>
-#include <webrtc/base/flags.h>
-#include <webrtc/base/physicalsocketserver.h>
-#include <webrtc/base/ssladapter.h>
-#include <webrtc/base/thread.h>
+#include <webrtc/rtc_base/flags.h>
+#include <webrtc/rtc_base/physicalsocketserver.h>
+#include <webrtc/rtc_base/ssladapter.h>
+#include <webrtc/rtc_base/thread.h>
 
 // picojsonはコピペ用データ構造を作るために使う
 #include "picojson/picojson.h"
@@ -33,7 +35,7 @@ class Connection {
 
   // Offer/Answerの作成が成功したら、LocalDescriptionとして設定 & 相手に渡す文字列として表示
   void onSuccessCSD(webrtc::SessionDescriptionInterface* desc) {
-    peer_connection->SetLocalDescription(&ssdo, desc);
+    peer_connection->SetLocalDescription(ssdo, desc);
 
     std::string sdp;
     desc->ToString(&sdp);
@@ -150,14 +152,6 @@ class Connection {
       std::cout << std::this_thread::get_id() << ":"
                 << "CreateSessionDescriptionObserver::OnFailure" << std::endl << error << std::endl;
     };
-
-    int AddRef() const override {
-      return 0;
-    };
-
-    int Release() const override {
-      return 0;
-    };
   };
 
   class SSDO : public webrtc::SetSessionDescriptionObserver {
@@ -177,26 +171,18 @@ class Connection {
       std::cout << std::this_thread::get_id() << ":"
                 << "SetSessionDescriptionObserver::OnFailure" << std::endl << error << std::endl;
     };
-
-    int AddRef() const override {
-      return 0;
-    };
-
-    int Release() const override {
-      return 0;
-    };
   };
 
   PCO  pco;
   DCO  dco;
-  CSDO csdo;
-  SSDO ssdo;
+  rtc::scoped_refptr<CSDO> csdo;
+  rtc::scoped_refptr<SSDO> ssdo;
 
   Connection() :
       pco(*this),
       dco(*this),
-      csdo(*this),
-      ssdo(*this) {
+      csdo(new rtc::RefCountedObject<CSDO>(*this)),
+      ssdo(new rtc::RefCountedObject<SSDO>(*this)) {
   }
 };
 
@@ -209,7 +195,9 @@ rtc::PhysicalSocketServer socket_server;
 class CustomRunnable : public rtc::Runnable {
  public:
   void Run(rtc::Thread* subthread) override {
-    peer_connection_factory = webrtc::CreatePeerConnectionFactory();
+    peer_connection_factory = webrtc::CreatePeerConnectionFactory(
+        webrtc::CreateBuiltinAudioEncoderFactory(),
+        webrtc::CreateBuiltinAudioDecoderFactory());
     if (peer_connection_factory.get() == nullptr) {
       std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
       return;
@@ -234,7 +222,7 @@ void cmd_sdp1() {
     return;
   }
   connection.sdp_type = "Offer"; // 表示用の文字列、webrtcの動作には関係ない
-  connection.peer_connection->CreateOffer(&connection.csdo, nullptr);
+  connection.peer_connection->CreateOffer(connection.csdo, nullptr);
 }
 
 void cmd_sdp2(const std::string& parameter) {
@@ -254,10 +242,10 @@ void cmd_sdp2(const std::string& parameter) {
               << error.description << std::endl;
     std::cout << "Offer SDP:begin" << std::endl << parameter << std::endl << "Offer SDP:end" << std::endl;
   }
-  connection.peer_connection->SetRemoteDescription(&connection.ssdo, session_description);
+  connection.peer_connection->SetRemoteDescription(connection.ssdo, session_description);
 
   connection.sdp_type = "Answer"; // 表示用の文字列、webrtcの動作には関係ない
-  connection.peer_connection->CreateAnswer(&connection.csdo, nullptr);
+  connection.peer_connection->CreateAnswer(connection.csdo, nullptr);
 }
 
 void cmd_sdp3(const std::string& parameter) {
@@ -270,7 +258,7 @@ void cmd_sdp3(const std::string& parameter) {
               << error.description << std::endl;
     std::cout << "Answer SDP:begin" << std::endl << parameter << std::endl << "Answer SDP:end" << std::endl;
   }
-  connection.peer_connection->SetRemoteDescription(&connection.ssdo, session_description);
+  connection.peer_connection->SetRemoteDescription(connection.ssdo, session_description);
 }
 
 void cmd_ice1() {

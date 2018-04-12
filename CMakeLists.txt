@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
 include_directories("${LIBWEBRTC_PATH}/include")
+include_directories("${LIBWEBRTC_PATH}/include/webrtc")
+
 link_directories("${LIBWEBRTC_PATH}/lib")
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # macOS
   file(READ ${LIBWEBRTC_PATH}/exports_libwebrtc.txt webrtc_libs)
