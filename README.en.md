@@ -4,6 +4,7 @@ Sample program for using WebRTC(DataChannel) on C++.
 # Requirement
 
 * Mac OSX
+* Ubuntu
 
 # Compile
 
