@@ -7,7 +7,6 @@ WebRTCのDataChannelをC++から利用するサンプルコード。
 # Requirement
 
 * Mac OSX
-* コンパイル済みWebRTCをダウンロード、展開しておく。(https://github.com/llamerada-jp/libwebrtc)
 
 # Compile
 
@@ -17,8 +16,7 @@ $ git clone --depth 1 https://github.com/llamerada-jp/webrtc-cpp-sample.git
 $ cd webrtc-cpp-sample
 $ git submodule init
 $ git submodule update
-$ cmake -DLIBWEBRTC_PATH=<path to unarchived webrtc> .
-$ make
+$ sh build.sh
 ```
 
 # Run

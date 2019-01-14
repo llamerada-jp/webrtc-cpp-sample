@@ -10,18 +10,20 @@
 //#define WEBRTC_ANDROID 1
 //#define WEBRTC_IOS 1
 //#define WEBRTC_LINUX 1
-#define WEBRTC_MAC 1
-#define WEBRTC_POSIX 1
+//#define WEBRTC_MAC 1
+//#define WEBRTC_POSIX 1
 //#define WEBRTC_WIN 1
 
 // WebRTC関連のヘッダ
-#include <webrtc/api/audio_codecs/builtin_audio_decoder_factory.h>
-#include <webrtc/api/audio_codecs/builtin_audio_encoder_factory.h>
-#include <webrtc/api/peerconnectioninterface.h>
-#include <webrtc/rtc_base/flags.h>
-#include <webrtc/rtc_base/physicalsocketserver.h>
-#include <webrtc/rtc_base/ssladapter.h>
-#include <webrtc/rtc_base/thread.h>
+#include <api/audio_codecs/builtin_audio_decoder_factory.h>
+#include <api/audio_codecs/builtin_audio_encoder_factory.h>
+#include <api/video_codecs/builtin_video_decoder_factory.h>
+#include <api/video_codecs/builtin_video_encoder_factory.h>
+#include <api/peerconnectioninterface.h>
+#include <rtc_base/flags.h>
+#include <rtc_base/physicalsocketserver.h>
+#include <rtc_base/ssladapter.h>
+#include <rtc_base/thread.h>
 
 // picojsonはコピペ用データ構造を作るために使う
 #include "picojson/picojson.h"
@@ -196,8 +198,19 @@ class CustomRunnable : public rtc::Runnable {
  public:
   void Run(rtc::Thread* subthread) override {
     peer_connection_factory = webrtc::CreatePeerConnectionFactory(
+        nullptr /* network_thread */, nullptr /* worker_thread */,
+        nullptr /* signaling_thread */, nullptr /* default_adm */,
+        //*
         webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory());
+        webrtc::CreateBuiltinAudioDecoderFactory(),
+        webrtc::CreateBuiltinVideoEncoderFactory(),
+        webrtc::CreateBuiltinVideoDecoderFactory(),
+        /*/
+        nullptr, nullptr, nullptr, nullptr,
+        //*/
+        nullptr /* audio_mixer */,
+        nullptr /* audio_processing */);
+
     if (peer_connection_factory.get() == nullptr) {
       std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
       return;
@@ -222,7 +235,8 @@ void cmd_sdp1() {
     return;
   }
   connection.sdp_type = "Offer"; // 表示用の文字列、webrtcの動作には関係ない
-  connection.peer_connection->CreateOffer(connection.csdo, nullptr);
+  connection.peer_connection->CreateOffer(connection.csdo,
+                                          webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
 }
 
 void cmd_sdp2(const std::string& parameter) {
@@ -245,7 +259,8 @@ void cmd_sdp2(const std::string& parameter) {
   connection.peer_connection->SetRemoteDescription(connection.ssdo, session_description);
 
   connection.sdp_type = "Answer"; // 表示用の文字列、webrtcの動作には関係ない
-  connection.peer_connection->CreateAnswer(connection.csdo, nullptr);
+  connection.peer_connection->CreateAnswer(connection.csdo,
+                                           webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
 }
 
 void cmd_sdp3(const std::string& parameter) {

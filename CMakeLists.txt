@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 include_directories("${LIBWEBRTC_PATH}/include")
-include_directories("${LIBWEBRTC_PATH}/include/webrtc")
+include_directories("${LIBWEBRTC_PATH}/include/third_party/abseil-cpp")
 
 link_directories("${LIBWEBRTC_PATH}/lib")
 
@@ -40,6 +40,11 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+
+# Disable RTTI
+set_source_files_properties(main.cpp PROPERTIES
+  COMPILE_FLAGS " -fno-rtti "
+  )
 
 add_executable(sample
   main.cpp

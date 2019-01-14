@@ -4,7 +4,6 @@ Sample program for using WebRTC(DataChannel) on C++.
 # Requirement
 
 * Mac OSX
-* Please download libwebrtc(It is precompiled chrome's WebRTC) and unarchive it.(https://github.com/llamerada-jp/libwebrtc)
 
 # Compile
 
@@ -14,8 +13,7 @@ $ git clone --depth 1 https://github.com/llamerada-jp/webrtc-cpp-sample.git
 $ cd webrtc-cpp-sample
 $ git submodule init
 $ git submodule update
-$ cmake -DLIBWEBRTC_PATH=<path to unarchived webrtc> .
-$ make
+$ sh build.sh
 ```
 
 # Run
