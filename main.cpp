@@ -188,37 +188,12 @@ class Connection {
   }
 };
 
-std::unique_ptr<rtc::Thread> thread;
+std::unique_ptr<rtc::Thread> network_thread;
+std::unique_ptr<rtc::Thread> worker_thread;
+std::unique_ptr<rtc::Thread> signaling_thread;
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory;
 webrtc::PeerConnectionInterface::RTCConfiguration configuration;
 Connection connection;
-rtc::PhysicalSocketServer socket_server;
-
-class CustomRunnable : public rtc::Runnable {
- public:
-  void Run(rtc::Thread* subthread) override {
-    peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-        nullptr /* network_thread */, nullptr /* worker_thread */,
-        nullptr /* signaling_thread */, nullptr /* default_adm */,
-        //*
-        webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(),
-        webrtc::CreateBuiltinVideoEncoderFactory(),
-        webrtc::CreateBuiltinVideoDecoderFactory(),
-        /*/
-        nullptr, nullptr, nullptr, nullptr,
-        //*/
-        nullptr /* audio_mixer */,
-        nullptr /* audio_processing */);
-
-    if (peer_connection_factory.get() == nullptr) {
-      std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
-      return;
-    }
-
-    subthread->Run();
-  }
-};
 
 void cmd_sdp1() {
   connection.peer_connection = peer_connection_factory->CreatePeerConnection(configuration, nullptr, nullptr, &connection.pco);
@@ -320,7 +295,9 @@ void cmd_quit() {
   connection.data_channel = nullptr;
   peer_connection_factory = nullptr;
   // リソースを開放したらスレッドを止めてOK
-  thread->Quit();
+  network_thread->Stop();
+  worker_thread->Stop();
+  signaling_thread->Stop();
 }
 
 int main(int argc, char* argv[]) {
@@ -336,12 +313,31 @@ int main(int argc, char* argv[]) {
   ice_server.uri = "stun:stun.l.google.com:19302";
   configuration.servers.push_back(ice_server);
 
-  thread.reset(new rtc::Thread(&socket_server));
-  
   rtc::InitializeSSL();
 
-  CustomRunnable runnable;
-  thread->Start(&runnable);
+  network_thread = rtc::Thread::CreateWithSocketServer();
+  network_thread->Start();
+  worker_thread = rtc::Thread::Create();
+  worker_thread->Start();
+  signaling_thread = rtc::Thread::Create();
+  signaling_thread->Start();
+
+  peer_connection_factory = webrtc::CreatePeerConnectionFactory(
+      network_thread.get(),
+      worker_thread.get(),
+      signaling_thread.get(),
+      nullptr /* default_adm */,
+      webrtc::CreateBuiltinAudioEncoderFactory(),
+      webrtc::CreateBuiltinAudioDecoderFactory(),
+      webrtc::CreateBuiltinVideoEncoderFactory(),
+      webrtc::CreateBuiltinVideoDecoderFactory(),
+      nullptr /* audio_mixer */,
+      nullptr /* audio_processing */);
+
+  if (peer_connection_factory.get() == nullptr) {
+    std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
+    return EXIT_FAILURE;
+  }
 
   std::string line;
   std::string command;
@@ -407,7 +403,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  thread.reset();
   rtc::CleanupSSL();
 
   return 0;
