@@ -4,7 +4,7 @@ set -eu
 
 readonly ROOT_PATH=$(cd $(dirname $0) && pwd)
 
-# Get OS environment parameters.
+## Get OS environment parameters.
 if [ "$(uname -s)" = 'Darwin' ]; then
     # Mac OSX
     readonly ID='macos'
@@ -21,7 +21,7 @@ else
     exit 1
 fi
 
-# Download libwebrtc
+## Download libwebrtc (Compiled chromium WebRTC native APIs.)
 readonly LOCAL_ENV_PATH=${ROOT_PATH}/local
 readonly WEBRTC_VER=71
 
@@ -29,12 +29,14 @@ mkdir -p ${LOCAL_ENV_PATH}/include
 mkdir -p ${LOCAL_ENV_PATH}/src
 cd ${LOCAL_ENV_PATH}/src
 
+# Filename
 if [ "${ID}" = 'macos' ]; then
     readonly WEBRTC_FILE="libwebrtc-osx-${WEBRTC_VER}.zip"
 else
-    readonly WEBRTC_FILE="libwebrtc-ubuntu-16.04-x86_64-${WEBRTC_VER}.tar.gz"
+    readonly WEBRTC_FILE="libwebrtc-ubuntu-x64-${WEBRTC_VER}.tar.gz"
 fi
 
+# Download and unarchive
 if ! [ -e "${WEBRTC_FILE}" ]; then
     if [ "${ID}" = 'macos' ]; then
 	curl -OL https://github.com/llamerada-jp/libwebrtc/releases/download/v${WEBRTC_VER}/${WEBRTC_FILE}
@@ -47,7 +49,13 @@ if ! [ -e "${WEBRTC_FILE}" ]; then
     fi
 fi
 
-# Build
+## Build
+# Change compiler to clang on linux
+if [ "${IS_LINUX}" = 'true' ]; then
+    export CC=/usr/bin/clang
+    export CXX=/usr/bin/clang++
+fi
+
 readonly BUILD_PATH=${ROOT_PATH}/build
 mkdir -p ${BUILD_PATH}
 

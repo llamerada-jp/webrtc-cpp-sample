@@ -7,6 +7,7 @@ WebRTCのDataChannelをC++から利用するサンプルコード。
 # Requirement
 
 * Mac OSX
+* Ubuntu
 
 # Compile
 
