@@ -19,10 +19,11 @@
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/video_codecs/builtin_video_decoder_factory.h>
 #include <api/video_codecs/builtin_video_encoder_factory.h>
-#include <api/peerconnectioninterface.h>
+#include <api/peer_connection_interface.h>
+#include <api/create_peerconnection_factory.h>
 #include <rtc_base/flags.h>
-#include <rtc_base/physicalsocketserver.h>
-#include <rtc_base/ssladapter.h>
+#include <rtc_base/physical_socket_server.h>
+#include <rtc_base/ssl_adapter.h>
 #include <rtc_base/thread.h>
 
 // picojsonはコピペ用データ構造を作るために使う
@@ -308,6 +309,10 @@ int main(int argc, char* argv[]) {
   std::cout << std::this_thread::get_id() << ":"
             << "Main thread" << std::endl;
 
+  std::string testx;
+  std::cin>>testx;
+  std::cin>>testx;
+  std::cout<<testx<<std::endl;
   // GoogleのSTUNサーバを利用
   webrtc::PeerConnectionInterface::IceServer ice_server;
   ice_server.uri = "stun:stun.l.google.com:19302";
@@ -340,17 +345,22 @@ int main(int argc, char* argv[]) {
   }
 
   std::string line;
+  std::cin>>line;
+  std::cout<<line<<std::endl;
   std::string command;
   std::string parameter;
   bool is_cmd_mode = true;
 
   while (std::getline(std::cin, line)) {
+    std::cout<<"WHAT "<<line<<std::endl;
     if (is_cmd_mode) {
       if (line == "") {
         continue;
 
       } else if (line == "sdp1") {
+        std::cout<<"ASDFASDFASDFASDF"<<std::endl;
         cmd_sdp1();
+        std::cout<<"ASDF"<<std::endl;
 
       } else if (line == "sdp2") {
         command = "sdp2";
