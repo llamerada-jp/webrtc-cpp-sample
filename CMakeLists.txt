@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
+project(webrtc-cpp-sample)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 include_directories("${LIBWEBRTC_PATH}/include")
 include_directories("${LIBWEBRTC_PATH}/include/third_party/abseil-cpp")
@@ -28,8 +29,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # Linux
   find_package(PkgConfig)
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
 
   list(APPEND webrtc_libs "-Wl,--start-group")
   file(READ ${LIBWEBRTC_PATH}/exports_libwebrtc.txt webrtc_read_tmp)

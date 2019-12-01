@@ -23,7 +23,7 @@ fi
 
 ## Download libwebrtc (Compiled chromium WebRTC native APIs.)
 readonly LOCAL_ENV_PATH=${ROOT_PATH}/local
-readonly WEBRTC_VER=71
+readonly WEBRTC_VER=m78
 
 mkdir -p ${LOCAL_ENV_PATH}/include
 mkdir -p ${LOCAL_ENV_PATH}/src
@@ -31,19 +31,19 @@ cd ${LOCAL_ENV_PATH}/src
 
 # Filename
 if [ "${ID}" = 'macos' ]; then
-    readonly WEBRTC_FILE="libwebrtc-osx-${WEBRTC_VER}.zip"
+    readonly WEBRTC_FILE="libwebrtc-78.0.3904.108-macosx-10.15.1.zip"
 else
-    readonly WEBRTC_FILE="libwebrtc-ubuntu-x64-${WEBRTC_VER}.tar.gz"
+    readonly WEBRTC_FILE="libwebrtc-78.0.3904.108-ubuntu-18.04-x64.tar.gz"
 fi
 
 # Download and unarchive
 if ! [ -e "${WEBRTC_FILE}" ]; then
     if [ "${ID}" = 'macos' ]; then
-	curl -OL https://github.com/llamerada-jp/libwebrtc/releases/download/v${WEBRTC_VER}/${WEBRTC_FILE}
+	curl -OL https://github.com/llamerada-jp/libwebrtc/releases/download/${WEBRTC_VER}/${WEBRTC_FILE}
 	cd ${LOCAL_ENV_PATH}
 	unzip -o src/${WEBRTC_FILE}
     else
-	wget https://github.com/llamerada-jp/libwebrtc/releases/download/v${WEBRTC_VER}/${WEBRTC_FILE}
+	wget https://github.com/llamerada-jp/libwebrtc/releases/download/${WEBRTC_VER}/${WEBRTC_FILE}
 	cd ${LOCAL_ENV_PATH}
 	tar zxf src/${WEBRTC_FILE}
     fi
@@ -52,16 +52,16 @@ fi
 ## Build
 # Change compiler to clang on linux
 if [ "${IS_LINUX}" = 'true' ]; then
-    export CC=/usr/bin/clang
-    export CXX=/usr/bin/clang++
+    export CC=cc
+    export CXX=c++
 fi
 
 readonly BUILD_PATH=${ROOT_PATH}/build
 mkdir -p ${BUILD_PATH}
 
-cd ${ROOT_PATH}
-git submodule init
-git submodule update
+# cd ${ROOT_PATH}
+# git submodule init
+# git submodule update
 
 cd ${BUILD_PATH}
 cmake -DLIBWEBRTC_PATH=${LOCAL_ENV_PATH} ..
