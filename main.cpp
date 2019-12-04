@@ -319,13 +319,14 @@ int main(int argc, char *argv[]) {
   worker_thread->Start();
   signaling_thread = rtc::Thread::Create();
   signaling_thread->Start();
-  peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-      network_thread.get(), worker_thread.get(), signaling_thread.get(), nullptr /* default_adm */,
-      webrtc::CreateBuiltinAudioEncoderFactory(), webrtc::CreateBuiltinAudioDecoderFactory(), nullptr, nullptr,
-      nullptr /* audio_mixer */, nullptr /* audio_processing */);
+  webrtc::PeerConnectionFactoryDependencies dependencies;
+  dependencies.network_thread   = network_thread.get();
+  dependencies.worker_thread    = worker_thread.get();
+  dependencies.signaling_thread = signaling_thread.get();
+  peer_connection_factory       = webrtc::CreateModularPeerConnectionFactory(std::move(dependencies));
 
   if (peer_connection_factory.get() == nullptr) {
-    std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
+    std::cout << "Error on CreateModularPeerConnectionFactory." << std::endl;
     return EXIT_FAILURE;
   }
 
