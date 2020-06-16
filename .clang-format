@@ -1,0 +1,29 @@
+---
+BasedOnStyle: 'Google'
+AccessModifierOffset: -1
+AlignAfterOpenBracket: 'AlwaysBreak'
+AlignConsecutiveAssignments: true
+AllowShortFunctionsOnASingleLine: 'None'
+AlwaysBreakAfterReturnType: 'None'
+AlwaysBreakTemplateDeclarations: true
+BreakConstructorInitializersBeforeComma: true
+BreakConstructorInitializers: 'AfterColon'
+PenaltyReturnTypeOnItsOwnLine: 120
+ColumnLimit: 120
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
+FixNamespaceComments: true
+IncludeBlocks: 'Regroup'
+IncludeCategories:
+  - Regex:           '^<.*\.h>'
+    Priority:        1
+  - Regex:           '^<.*'
+    Priority:        2
+  - Regex:           '.*'
+    Priority:        3
+IndentPPDirectives: 'AfterHash'
+PointerAlignment: 'Left'
+SortIncludes: true
+SpaceAfterTemplateKeyword: false
+SpacesBeforeTrailingComments: 2
+UseTab: 'Never'
