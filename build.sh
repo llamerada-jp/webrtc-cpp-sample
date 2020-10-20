@@ -23,7 +23,7 @@ fi
 
 ## Download libwebrtc (Compiled chromium WebRTC native APIs.)
 readonly LOCAL_ENV_PATH=${ROOT_PATH}/local
-readonly WEBRTC_VER=m83
+readonly WEBRTC_VER=m86
 
 mkdir -p ${LOCAL_ENV_PATH}/include
 mkdir -p ${LOCAL_ENV_PATH}/src
@@ -31,9 +31,9 @@ cd ${LOCAL_ENV_PATH}/src
 
 # Filename
 if [ "${ID}" = 'macos' ]; then
-    readonly WEBRTC_FILE="libwebrtc-83.0.4103.97-macos-amd64.zip"
+    readonly WEBRTC_FILE="libwebrtc-86.0.4240.80-macos-amd64.zip"
 else
-    readonly WEBRTC_FILE="libwebrtc-83.0.4103.97-linux-amd64.tar.gz"
+    readonly WEBRTC_FILE="libwebrtc-86.0.4240.75-linux-amd64.tar.gz"
 fi
 
 # Download and unarchive
